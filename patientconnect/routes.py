@@ -1,14 +1,18 @@
-from patientconnect import app, db, bcrypt, scheduler, doctor_required, mail
+from patientconnect import app, db, bcrypt, doctor_required, mail
 from patientconnect.models import (MedicalProfessional, Patient, TreatmentRecord,
                                    RegisteredDoctors, RegisteredPharmacists,
                                    RegisteredPharmtechs)
-from markupsafe import Markup
 from flask import render_template, url_for, flash, redirect, request, session
-from patientconnect.forms import *
+from patientconnect.forms import (GetPhoneNumber, ContactForm, RequestResetForm,
+                                  ResetPasswordForm, MedicalRegistrationForm, PatientRegistrationForm, 
+                                  LogInForm, DiagnosisForm, NewRecordForm, VisitStartForm, MedicationForm,
+                                  InterventionsForm, InvestgationsForm, UpdateAccountForm)
 from flask_login import login_user, current_user, login_required, logout_user
 from flask_mail import Message
 import pyotp
 from datetime import datetime, timedelta
+""" Module to handle the different routes functionality
+"""
 
 @app.route('/', methods=['GET', 'POST'])
 @app.route('/home', methods=['GET', 'POST'])
@@ -22,7 +26,6 @@ def home():
     if current_user.is_authenticated and current_user.role == 'patient':
         return redirect(url_for('homepage_patient'))
     
-    print(session)
     # complicated way to handle notifying users they have been logged out
     # after a 30min timeout and redirect them to the login page
     if 'expired_final' in session:
@@ -124,7 +127,6 @@ def reset_request():
                 flash('Password reset instructions sent to email provided.', 'info')
                 return redirect(url_for('login', user='medic'))
             
-    print(request.args.get('user'))
     return render_template('reset_request.html', title='Reset Password', form=form)
 
 @app.route('/reset_password/<token>', methods=['GET', 'POST'])
@@ -266,9 +268,10 @@ def medsignup():
             session['med_query_details']['email'] = form.email.data
             session['med_query_details']['subject'] = 'Confirmation of registration details'
             session['med_query_details']['message'] = f'''Help me with my registration:
-Profession: {form.profession.data}
-Registration number: {form.registration_number.data}
-Facility Name: {form.facility_name.data}'''
+
+                Profession: {form.profession.data}
+                Registration number: {form.registration_number.data}
+                Facility Name: {form.facility_name.data}'''
     return render_template('medsignup.html', title='Sign Up', form=form)
 
 @app.route('/ptsignup', methods=['GET', 'POST'])
@@ -303,7 +306,7 @@ def login():
     
     if current_user.is_authenticated and current_user.role == 'patient':
         return redirect(url_for('homepage_patient'))
-    print(session)
+    
     # user needed to know which database to get the login details
     user = request.args.get('user')
     if user is None:
@@ -368,9 +371,10 @@ def send_otp_email(patient):
     """
     msg = Message('Visit Authorization Code', sender='patientconnect24@gmail.com',
                   recipients=[patient.email])
-    msg.body = f'''To authorize the visit, share this code with your doctor:
+    msg.body = f'''To begin the current visit, please share this code with your doctor:
 {patient.current_otp}
-if you did not make this request, ignore this message.
+
+if you did not authorize this request, kindly ignore this message.
 '''
     mail.send(msg)
 
@@ -393,7 +397,6 @@ def homepage_medic():
             patient.otp_expired = True
             db.session.commit()
             session.pop('phone', None)
-    print(session)
 
     end_visit = request.args.get('end_visit')
     if end_visit == 'true':
@@ -409,15 +412,15 @@ def homepage_medic():
         otp = totp.now()
         patient.current_otp = otp
         patient.otp_expired = False
+        patient.otp_creation_time = datetime.now()
         session['phone'] = patient.phone_number
-        print(otp)
         db.session.commit()
 
 
         try:
             send_otp_email(patient)
-        except Exception:
-            flash('We had some trouble sending the otp code. Please enter number again', 'secondary')
+        except Exception as e:
+            flash(f'We had some trouble sending the otp code. Please enter number again {e}', 'secondary')
             return render_template('homepage_medic.html',
                             get_phone_form=form,
                             title='Medic DashBoard',
@@ -444,43 +447,30 @@ def otp_confirmation():
     if phone is None:
         flash('Enter Phone Number', 'warning')
         return redirect (url_for('homepage_medic'))
-    
-    # set a timer for 300 seconds to delete the patient's otp from database
-    date = datetime.now() + timedelta(seconds=300)
-
-    def remove_code():
-        """Removes the user's otp from the database"""
-        with scheduler.app.app_context():
-            patient = Patient.query.filter_by(phone_number=phone).first()
-            patient.current_otp = None
-            patient.otp_expired = True
-            db.session.commit()
-            session.pop('phone', None)
-            print('code expired')
-            scheduler.remove_all_jobs()
 
     patient = Patient.query.filter_by(phone_number=phone).first()
-    
     if form.validate_on_submit():
-        if patient.current_otp == form.authorization_code.data:
+        time_lapsed = (datetime.now() - patient.otp_creation_time).total_seconds()
+        if (patient.current_otp == form.authorization_code.data and
+            time_lapsed < 300):
+
             patient.current_otp = None
             patient.otp_expired = True
+            patient.otp_creation_time = None
             db.session.commit()
             scheduler.remove_all_jobs()
             session['phone'] = patient.phone_number
             return redirect(url_for('homepage_patient', phone=phone))
-        elif patient.otp_expired == True:
-            flash('Code expired. Request a new one.', 'warning')
-            patient.otp_expired = False
+        elif time_lapsed > 300:
+            flash('Code expired. Kindly request a new one.', 'warning')
+            patient.current_otp = None
+            patient.otp_expired = True
+            patient.otp_creation_time = None
             db.session.commit()
             session.pop('phone', None)
             return redirect (url_for('homepage_medic'))
         else:
             flash("Invalid Code. Confirm the code or ", 'redirect')
-
-    # set up the scheduler to delete the patient's otp
-    if scheduler.get_job(id='testtime3') is None:
-        scheduler.add_job(id='testtime3', func=remove_code, trigger='date', run_date=date)
     
     return render_template('otp-confirmation.html', title='confirm-otp', confirm_opt_form=form)
 
@@ -568,7 +558,6 @@ def account():
     """Handle account updates and view logic
     """
     form = UpdateAccountForm()
-    print(form.errors)
     if form.validate_on_submit():
         current_user.username = form.username.data
         current_user.email = form.email.data
@@ -587,7 +576,6 @@ def account():
         if current_user.role == 'medic':
             form.facility_name.data = current_user.facility_name
 
-    print(form.errors)
     return render_template('account.html', title='Account', form=form)
 
 

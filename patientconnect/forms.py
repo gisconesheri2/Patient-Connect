@@ -6,7 +6,9 @@ from wtforms.validators import DataRequired, Length, Email, EqualTo, InputRequir
     ValidationError, Optional, NumberRange
 from flask_login import current_user
 import phonenumbers
-
+"""Defination of classes to model the WTF forms and handle validation
+of details entered in the forms
+"""
 
 class RegistrationForm(FlaskForm):
     """ Registration form template containing common fields
@@ -82,7 +84,8 @@ class PatientRegistrationForm(RegistrationForm):
                 raise ValueError()
         except (phonenumbers.phonenumberutil.NumberParseException, ValueError):
             raise ValidationError('Invalid phone number')
-        valid_phone = phone.data
+        print(type(phone.data))
+        valid_phone = int(phone.data)
         patient = Patient.query.filter_by(phone_number=valid_phone).first()
         if patient:
             raise ValidationError('Phone Number exists. Please choose another')
@@ -255,6 +258,9 @@ class ResetPasswordForm(FlaskForm):
     submit = SubmitField('Reset Password')
 
 class ContactForm(FlaskForm):
+    """Template to facilitate sending of feedback and request manual registration
+    of healthcare professionals
+    """
     name = StringField('Full Name', validators=[DataRequired()])
     subject = StringField('Subject', validators=[DataRequired()])
     email = EmailField('Email Address', validators=([DataRequired(), Email()]))

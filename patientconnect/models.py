@@ -68,6 +68,7 @@ class Patient(db.Model, UserMixin):
     current_otp = db.Column(db.String)
     # age = db.Column(db.Integer)
     otp_expired = db.Column(db.Boolean, default=False)
+    otp_creation_time = db.Column(db.DateTime)
     role = db.Column(db.String(30), nullable=False, default='patient')
     treatment_records = db.relationship('TreatmentRecord', backref='patient', cascade="all, delete-orphan")
 
