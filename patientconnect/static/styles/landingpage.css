@@ -1,0 +1,67 @@
+
+body {
+    font-style: normal;
+    font-family: Arial, Helvetica, sans-serif;
+}
+.header {
+    display: flex;
+    justify-content: space-between;
+    height : 50px;
+    width: 100%;
+    background-image: url('../images/pclogo.png');
+    background-repeat: no-repeat;
+    background-position: 0px;
+    border-bottom: 2px solid #2fb683;
+
+}
+
+#header-text {
+    margin-left: 100px;
+    font-style: italic;
+    font-family: Verdana, Tahoma, sans-serif;
+    font-size: 25px;
+}
+.nav_bar{
+    margin-right: 10px;
+    align-self:flex-end;
+    margin-bottom: 10px;
+}
+.welmsg {
+    width: 100%;
+    text-align: center;
+}
+
+.welmsg p {
+    width: 100%;
+}
+
+button {
+    margin: 10px;
+    width: 100px;
+}
+
+footer {
+    width: 100%;
+    height: auto;
+    background-color: #2fb683;
+}
+
+.peter-custom-error {
+    color: red;
+    font-style: italic;
+}
+
+.bold {
+    font-weight: bold;
+}
+
+.common-field {
+    color: #40e0d0;
+}
+
+legend {
+    color: #0095b6;
+}
+a {
+    color: inherit;
+}

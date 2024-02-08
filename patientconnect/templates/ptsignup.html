@@ -1,0 +1,152 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="container pt-3">
+	<form method="POST", action="">
+		{{ form.hidden_tag() }}
+		<fieldset class="form-group">
+			<legend class="">Register as a patient!</legend>
+			<div class="row mb-3">
+				<label class="col-sm-2 col-form-label text-primary" for="full-name">Full Name</label>
+				<div class="col-sm-10">
+					<div class="d-flex">
+						<div class="px-2">
+								{{ form.surname.label(class="form-label text-primary") }}
+
+								{% if form.surname.errors %}
+											{{ form.surname(class="form-control") }}
+										<div class="peter-custom-error">
+											{% for error in form.surname.errors %}
+												<span>{{ error }}</span>
+											{% endfor %}
+										</div>
+								{% else %}
+									{{ form.surname(class="form-control") }}
+								{% endif %}
+						</div>
+						<div class="">
+								{{ form.other_names.label(class="form-label text-primary") }}
+
+								{% if form.other_names.errors %}
+											{{ form.other_names(class="form-control") }}
+										<div class="peter-custom-error">
+											{% for error in form.other_names.errors %}
+												<span>{{ error }}</span>
+											{% endfor %}
+										</div>
+								{% else %}
+									{{ form.other_names(class="form-control") }}
+								{% endif %}
+						</div>
+					</div>
+				</div>
+			</div>
+				<div class="row mb-3">
+					{{ form.email.label(class="col-sm-2 col-form-label text-primary") }}
+
+					{% if form.email.errors %}
+						<div class="col-sm-10">
+							{{ form.email(class=" col-sm-8 form-control") }}
+						</div>
+						<div class="peter-custom-error">
+							{% for error in form.email.errors %}
+								<span>{{ error }}</span>
+							{% endfor %}
+						</div>
+					{% else %}
+						<div class="col-sm-10">
+							{{ form.email(class=" col-sm-8 form-control") }}
+						</div>
+					{% endif %}
+				</div>
+				<div class="row mb-3">
+					{{ form.phone.label(class="col-sm-2 col-form-label text-primary") }}
+					{% if form.phone.errors %}
+						<div class="col-sm-10">
+							{{ form.phone(class="form-control") }}
+						</div>
+						<div class="peter-custom-error">
+							{% for error in form.phone.errors %}
+								<span>{{ error }}</span>
+							{% endfor %}
+						</div>
+					{% else %}
+						<div class="col-sm-10">
+						{{ form.phone(class="form-control") }}
+						</div>
+					{% endif %}
+				</div>
+			<div class="row mb-3">
+				{{ form.password.label(class="col-sm-2 col-form-label text-primary") }}
+				{% if form.password.errors %}
+					<div class="col-sm-10">
+						{{ form.password(class="form-control") }}
+					</div>
+					<div class="peter-custom-error">
+						{% for error in form.password.errors %}
+							<span>{{ error }}</span>
+						{% endfor %}
+					</div>
+				{% else %}
+					<div class="col-sm-10">
+					{{ form.password(class="form-control") }}
+					</div>
+				{% endif %}
+			</div>
+			<div class="row mb-3">
+				{{ form.confirm_password.label(class="col-sm-2 col-form-label text-primary") }}
+				{% if form.confirm_password.errors %}
+					<div class="col-sm-8">
+						{{ form.confirm_password(class="form-control") }}
+					</div>
+					<div class="peter-custom-error">
+						{% for error in form.confirm_password.errors %}
+							<span>{{ error }}</span>
+						{% endfor %}
+					</div>
+				{% else %}
+					<div class="col-sm-10">
+					{{ form.confirm_password(class="form-control") }}
+					</div>
+				{% endif %}
+			</div>
+		</fieldset>
+		<div class="form-group">
+			{{ form.submit(class="mb-3 btn btn-primary") }}
+		</div>
+	</form>
+</div>
+<div class="border-top mb-3">
+				<small class="text-muted">
+						Already Have An Account? <a class="ml-2" href="{{ url_for('login', user='patient') }}">Sign In</a>
+				</small>
+</div>
+{% endblock content %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+    var wtf_phone_field = document.getElementById('phone');
+    wtf_phone_field.style.position = 'absolute';
+    wtf_phone_field.style.top = '-9999px';
+    wtf_phone_field.style.left = '-9999px';
+    wtf_phone_field.parentElement.insertAdjacentHTML('beforeend', '<div><input type="tel" id="_phone"></div>');
+    var fancy_phone_field = document.getElementById('_phone');
+    var fancy_phone_iti = window.intlTelInput(fancy_phone_field, {
+        separateDialCode: true,
+        autoInsertDialCode: true,
+        showSelectedDialCode: true,
+        initialCountry: "auto",
+        geoIpLookup: callback => {
+          fetch("https://ipapi.co/json")
+            .then(res => res.json())
+            .then(data => callback(data.country_code))
+            .catch(() => callback("us"));
+        },
+        utilsScript: "https://cdn.jsdelivr.net/npm/intl-tel-input@19.2.16/build/js/utils.js",
+    });
+    fancy_phone_iti.setNumber(wtf_phone_field.value);
+    fancy_phone_field.addEventListener('blur', function() {
+        wtf_phone_field.value = fancy_phone_iti.getNumber();
+    });
+</script>
+{% endblock %}

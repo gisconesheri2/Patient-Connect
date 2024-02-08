@@ -1,0 +1,32 @@
+{% extends "layout.html" %}
+{% block refresh %}
+    <meta http-equiv="refresh" content="185;url=http://127.0.0.1:5000{{ url_for('homepage_medic', code_expired='true') }}">
+{% endblock refresh %}
+{% block content %}
+<div class="container pt-3">
+    <form method="POST", action="">
+        {{ confirm_opt_form.hidden_tag() }}
+        <fieldset class="form-group">
+                <legend>Enter OTP Here:</legend>
+                <div class="form-group">
+                        {{ confirm_opt_form.authorization_code.label(class="form-label") }}
+
+                        {% if confirm_opt_form.authorization_code.errors %}
+                                {{ confirm_opt_form.authorization_code(class="form-control is_invalid")}}
+                                <div class="peter-custom-error">
+                                        {% for error in confirm_opt_form.authorization_code.errors %}
+                                                <span>{{ error }}</span>
+                                        {% endfor %}
+                                </div>
+                        {% else %}
+                                {{ confirm_opt_form.authorization_code(class="form-control") }}
+                        {% endif %}
+                </div>
+        </fieldset>
+        <div class="form-group">
+                {{ confirm_opt_form.submit(class="mt-3 btn btn-primary") }}
+        </div>
+    </form>
+</div>
+
+{% endblock content %}

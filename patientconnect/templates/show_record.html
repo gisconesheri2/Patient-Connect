@@ -1,0 +1,76 @@
+{% extends "layout.html" %}
+{% block content %}
+<span class="d-sm-flex">
+  <nav class="align-self-end mb-3">
+    <a href="{{ url_for('homepage_patient') }}">Back to Records List</a>
+  </nav>
+</span>
+<nav>
+<ul id="guide-tabs" class="nav nav-pills nav-tabs nav-fill flex-column flex-sm-row" role="tablist">
+    <li class="nav-item flex-sm-fill">
+      <a class="nav-link active" data-bs-toggle="pill" href="#diagnosis" role="tab" aria-controls="diagnosis" aria-selected="true">Diagnosis and Case Notes</a>
+    </li>
+    <li class="nav-item flex-sm-fill">
+      <a class="nav-link" data-bs-toggle="pill" href="#investigations" role="tab" aria-controls="investigations" aria-selected="false">Investigations Done</a>
+    </li>
+    <li class="nav-item flex-sm-fill">
+        <a class="nav-link" data-bs-toggle="pill" href="#medication" role="tab" aria-controls="medication" aria-selected="false">Medication Given</a>
+    </li>
+    <li class="nav-item flex-sm-fill">
+      <a class="nav-link" data-bs-toggle="pill" href="#interventions" role="tab" aria-controls="interventions" aria-selected="false">Interventions Done</a>
+    </li>
+
+  </ul>
+</nav>  
+  <!-- Tab panes -->
+  <div class="tab-content">
+    <div class="tab-pane container fade show active" id="diagnosis" role="tabpanel" >
+      <section class="mb-3">
+        <p class="bold">Diagnosis</p>
+        {{ record.diagnosis }}
+        <p class="bold">Case Notes</p>
+        {% for sent in record.case_notes.split('\n') %}
+          <p>{{ sent }}</p>
+        {% endfor %}
+      </section>
+      <button class="btn btn-primary" id='iv-next'>Next</button>
+    </div>
+    <div class="tab-pane container fade" id="investigations" role="tabpanel" >
+      <section class="mb-3">
+        <p class="bold">Investigations</p>
+        {{ record.investigations_done }}
+      </section>
+      <button class="btn btn-primary" id='md-next'>Next</button>
+    </div>
+    <div class="tab-pane container fade" id="medication" role="tabpanel" >
+      <section class="mb-3">
+        <p class="bold">Medication</p>
+        {{ record.medication_given }}
+      </section>
+      <button class="btn btn-primary" id='in-next'>Next</button>
+    </div>
+    <div class="tab-pane container fade" id="interventions" role="tabpanel" >
+      <section class="mb-3">
+        <p class="bold">Interventions</p>
+        {{ record.interventions_done }}
+      </section>
+      <button style="width: 150px;" class="btn btn-outline-primary"><a class="text-decoration-none" style="color: inherit;" href="{{ url_for('homepage_patient')}}">Back to Records List</a></button>
+    </div>
+  </div>
+{% endblock content%}
+
+{% block scripts %}
+{{ super() }}
+<script>
+   $("#iv-next").click(function() {
+    $('#guide-tabs li:eq(1) a').tab('show');
+  })
+  $("#md-next").click(function() {
+    $('#guide-tabs li:eq(2) a').tab('show');
+  });
+  $("#in-next").click(function() {
+    $('#guide-tabs li:eq(3) a').tab('show');
+  });
+</script>
+
+{% endblock scripts %}

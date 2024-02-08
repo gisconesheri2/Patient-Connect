@@ -1,0 +1,40 @@
+{% extends "layout.html" %}
+{% block content %}
+    {% if current_user.role == 'medic' %}
+        <h1 class="display-6" >{{ username }}'s treatment history</h1>
+    {% endif %}
+    {% if records|length >= 1 %}
+    <div class="d-sm-flex justify-content-between mt-2 bold">
+        <p>Date of treatment</p>
+        <p>Diagnosis</p>
+        <p>Facility Name</p>
+    </div>
+        {% for record in records %}
+
+        <ul class="list-unstyled">
+            <li  class="d-sm-flex justify-content-between mb-3">
+                <div>
+                    <a href="{{ url_for('records', id=record.id) }}">
+                    {{ record.date_created.strftime('%d %B %Y') }}</a>
+                </div>
+                <div>
+                    {{ record.diagnosis }}
+                </div>
+                <div>
+                    {{ record.facility_name }}
+                </div>
+            </li>
+        </ul>
+        {% endfor %}
+    {% else %}
+        <div class="container">
+            <p>No records available</p>
+        </div>
+    {% endif %}
+    {% if current_user.role == 'medic' %}
+    <div class="d-sm-flex justify-content-around">
+        <button style="width: 180px;" type="button" class="btn btn-outline-success"><a class="text-decoration-none" style="color: inherit;" href="{{ url_for('create_record', field='diagnosis') }}">Create New Record</a></button>
+        <button style="width: 180px;" type="button" class="btn btn-outline-success"><a class="text-decoration-none" style="color: inherit;" href="{{ url_for('homepage_medic', end_visit='true') }}">End Visit</a></button>
+    </div>
+    {% endif %}
+{% endblock content %}

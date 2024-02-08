@@ -1,0 +1,80 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="container pt-3">
+        <form method="POST", action="">
+                {{ form.hidden_tag() }}
+                <fieldset class="form-group">
+                        <legend class="border-bottom mb-4">Log in as {{ user }}</legend>
+                        <div class="row mb-3">
+                                {{ form.email.label(class="col-sm-2 col-form-label common-field") }}
+
+                                {% if form.email.errors %}
+                                                {{ form.email(class="form-control") }}
+
+                                        <div class="invalid-feedback">
+                                                {% for error in form.email.errors %}
+                                                        <span>{{ error }}</span>
+                                                {% endfor %}
+                                        </div>
+                                {% else %}
+                                        <div class="col-sm-8">
+                                        {{ form.email(class="form-control") }}
+                                        </div>
+                                {% endif %}
+                        </div>
+                        <div class="row mb-3">
+                                {{ form.password.label(class="col-sm-2 col-form-label common-field") }}
+
+                                {% if form.password.errors %}
+                                        {{ form.password(class="form-control is_invalid") }}
+                                        <div class="invalid-feedback">
+                                                {% for error in form.password.errors %}
+                                                        <span>{{ error }}</span>
+                                                {% endfor %}
+                                        </div>
+                                {% else %}
+                                        <div class="col-sm-8">
+                                        {{ form.password(class="form-control") }}
+                                        </div>
+                                {% endif %}
+                        </div>
+                        <div class="form-check mb-3">
+                                {{ form.remember(class='form-check-input') }}
+                                {{ form.remember.label(class="form-check-label") }}
+                        </div>
+                </fieldset>
+
+                <div class="d-flex">
+                        <div class="form-group">
+                                {{ form.submit(class="mt-2 btn btn-primary") }}
+                        </div>
+                        <small class="text-muted px-3 mt-3">
+                                <a href="{{ url_for('reset_request', user=user) }}">Forgot Password?</a>
+                        </small>
+                </div>
+        </form>
+</div>
+<div class="border-top mt-3 mb-2">
+        <small class="text-muted ml-5">
+            Don't Have An Account?
+            <a class="ml-2" href="{{ url_for('medsignup') }}">Register as Medical Professional</a>
+            <a class="ml-2" href="{{ url_for('ptsignup') }}">Register as Patient</a>
+        </small>
+</div>
+{% if user == 'patient' %}
+<div class="border-top mt-3">
+        <small class="text-muted ml-5">
+                Want to log in as a medic?
+            <a class="ml-2" href="{{ url_for('login', user='medic') }}">Log in as Medical Professional</a>
+        </small>
+</div>
+{% endif %}
+{% if user == 'medic' %}
+<div class="border-top mt-3">
+        <small class="text-muted ml-5">
+                Want to log in as a patient?
+            <a class="ml-2" href="{{ url_for('login', user='patient') }}">Log in as Patient</a>
+        </small>
+</div>
+{% endif %}
+{% endblock content %}

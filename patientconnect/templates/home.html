@@ -1,0 +1,26 @@
+{% extends "layout.html" %}
+{% block content %}
+       <section class="d-flex mt-6 welmsg">
+            <p>Welcome to Patient Connect.<br> Through this platform
+                medical and treatment history is easily shared 
+                between health care providers
+            </p>
+        </section>
+        <div class="d-sm-flex justify-content-around mt-2 mb-3">
+            <section>
+                <p class="welmsg text-success">Are you a medical professional?</p>
+                <div class="d-flex flex-column align-content-end">
+                    <button class="align-self-center mb-3 ml-3 btn btn-outline-success" type="button"><a class="text-decoration-none" style="color: inherit;" href="{{ url_for('medsignup') }}">Sign Up</a></button>
+                    <button class="align-self-center btn btn-outline-success" type="button"><a class="text-decoration-none" style="color: inherit;" href="{{ url_for('login', user='medic') }}">Log In</a></button>
+                </div>
+                
+            </section>
+            <section >
+                <p class="welmsg text-primary">Are you a Patient?</p>
+                <div class="d-flex flex-column">
+                    <button class="align-self-center mb-3 btn btn-outline-primary " type="button"><a class="text-decoration-none" style="color: inherit;" href="{{ url_for('ptsignup', user='patient') }}">Sign Up</a></button>
+                    <button class="align-self-center btn btn-outline-primary" type="button"><a class="text-decoration-none" style="color: inherit;" href="{{ url_for('login', user='patient') }}">Log In</a></button>
+                </div>
+            </section>
+        </div>
+{% endblock content %}

@@ -1,0 +1,120 @@
+{% extends "layout.html" %}
+{% block content %}
+    <div class="content-section">
+        <div class="bold common-field">
+          <h2 class="account-heading">{{ current_user.username }}</h2>
+          <p class="text-secondary common-field">{{ current_user.email }}</p>
+        </div>
+        <form method="POST" action="" enctype="multipart/form-data">
+            {{ form.hidden_tag() }}
+            <fieldset class="form-group">
+                <legend class="border-bottom mb-4 common-field">Account Info</legend>
+                <div class="row mb-3">
+					{{ form.username.label(class="col-sm-2 col-form-label common-field") }}
+
+						{% if form.username.errors %}
+								<div class="col-sm-10">
+									{{ form.username(class="form-control") }}
+								</div>
+								<div class="peter-custom-error">
+									{% for error in form.username.errors %}
+										<span>{{ error }}</span>
+									{% endfor %}
+								</div>
+						{% else %}
+							<div class="col-sm-10">
+								{{ form.username(class="form-control") }}
+							</div>
+						{% endif %}
+				</div>
+				<div class="row mb-3">
+					{{ form.email.label(class="col-sm-2 col-form-label common-field") }}
+
+					{% if form.email.errors %}
+						<div class="col-sm-10">
+							{{ form.email(class=" col-sm-8 form-control") }}
+						</div>
+						<div class="peter-custom-error">
+							{% for error in form.email.errors %}
+								<span>{{ error }}</span>
+							{% endfor %}
+						</div>
+					{% else %}
+						<div class="col-sm-10">
+							{{ form.email(class=" col-sm-8 form-control") }}
+						</div>
+					{% endif %}
+				</div>
+                {% if current_user.role == 'patient' %}
+                <div class="row mb-3">
+					{{ form.phone.label(class="col-sm-2 col-form-label common-field") }}
+					{% if form.phone.errors %}
+						<div class="col-sm-10">
+							{{ form.phone(class="form-control") }}
+						</div>
+						<div class="peter-custom-error">
+							{% for error in form.phone.errors %}
+								<span>{{ error }}</span>
+							{% endfor %}
+						</div>
+					{% else %}
+						<div class="col-sm-10">
+						{{ form.phone(class="form-control") }}
+						</div>
+					{% endif %}
+				</div>
+                {% endif %}
+				{% if current_user.role == 'medic' %}
+                <div class="row mb-3">
+					{{ form.facility_name.label(class="col-sm-2 col-form-label common-field") }}
+					{% if form.facility_name.errors %}
+						<div class="col-sm-10">
+							{{ form.facility_name(class="form-control") }}
+						</div>
+						<div class="peter-custom-error">
+							{% for error in form.facility_name.errors %}
+								<span>{{ error }}</span>
+							{% endfor %}
+						</div>
+					{% else %}
+						<div class="col-sm-10">
+						{{ form.facility_name(class="form-control") }}
+						</div>
+					{% endif %}
+				</div>
+                {% endif %}
+            </fieldset>
+            <div class="form-group mt-1">
+                {{ form.submit(class="btn btn-primary") }}
+            </div>
+        </form>
+    </div>
+{% endblock content %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+    var wtf_phone_field = document.getElementById('phone');
+    wtf_phone_field.style.position = 'absolute';
+    wtf_phone_field.style.top = '-9999px';
+    wtf_phone_field.style.left = '-9999px';
+    wtf_phone_field.parentElement.insertAdjacentHTML('beforeend', '<div><input type="tel" id="_phone"></div>');
+    var fancy_phone_field = document.getElementById('_phone');
+    var fancy_phone_iti = window.intlTelInput(fancy_phone_field, {
+        showSelectedDialCode: true,
+        initialCountry: "auto",
+        geoIpLookup: callback => {
+          fetch("https://ipapi.co/json")
+            .then(res => res.json())
+            .then(data => callback(data.country_code))
+            .catch(() => callback("us"));
+        },
+        utilsScript: "https://cdn.jsdelivr.net/npm/intl-tel-input@19.2.16/build/js/utils.js",
+    });
+    fancy_phone_iti.setNumber(wtf_phone_field.value);
+    fancy_phone_field.addEventListener('blur', function() {
+        wtf_phone_field.value = fancy_phone_iti.getNumber();
+    });
+</script>
+{% endblock %}
+
