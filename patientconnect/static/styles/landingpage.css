@@ -65,3 +65,8 @@ legend {
 a {
     color: inherit;
 }
+
+button#loading {
+    width: 150px;
+    visibility: hidden;
+    }

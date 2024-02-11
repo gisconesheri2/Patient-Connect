@@ -1,5 +1,7 @@
 from patientconnect import app, db, bcrypt, scheduler, doctor_required, mail
-from patientconnect.models import MedicalProfessional, Patient, TreatmentRecord
+from patientconnect.models import (MedicalProfessional, Patient, TreatmentRecord,
+                                   RegisteredDoctors, RegisteredPharmacists,
+                                   RegisteredPharmtechs)
 from markupsafe import Markup
 from flask import render_template, url_for, flash, redirect, request, session
 from patientconnect.forms import *
@@ -8,15 +10,21 @@ from flask_mail import Message
 import pyotp
 from datetime import datetime, timedelta
 
-@app.route('/')
-@app.route('/home')
+@app.route('/', methods=['GET', 'POST'])
+@app.route('/home', methods=['GET', 'POST'])
 def home():
+    """Handle the home view for the app
+    """
+    # not accessible to logged in users
     if current_user.is_authenticated and current_user.role == 'medic':
         return redirect(url_for('homepage_medic'))
     
     if current_user.is_authenticated and current_user.role == 'patient':
         return redirect(url_for('homepage_patient'))
+    
     print(session)
+    # complicated way to handle notifying users they have been logged out
+    # after a 30min timeout and redirect them to the login page
     if 'expired_final' in session:
         if session.get('expired_final') == 'true':
             flash('Your session has expired after 30 minutes, you have been logged out. Please login again', 'info')
@@ -24,16 +32,44 @@ def home():
             session.pop('expired_final', None)
             session.pop('user_category', None)
             return redirect(url_for('login', user=user))
-    return render_template('home.html')
+    
+    form = ContactForm()
+    # section is a request parameter for in-page navigation of the home page
+    # set by the navigation links on the header of the pages    
+    section = request.args.get('section')
+    if request.args.get('ms_redir') == 'true':
+        if session.get('med_query_details') is not None  and request.method == 'GET':
+            form.name.data = session['med_query_details']['name']
+            form.email.data = session['med_query_details']['email']
+            form.subject.data = session['med_query_details']['subject']
+            form.message.data = session['med_query_details']['message']
+    if form.validate_on_submit():
+        msg = Message(f'Contact Form feedback: {form.subject.data}', sender='patientconnect24@gmail.com',
+                  recipients=['patientconnect24@gmail.com'])
+        
+        msg.body = f'''Sender name: {form.name.data}
+Sender Email: {form.email.data}
+Message: {form.message.data}'''
+        try:
+            mail.send(msg)
+            session.pop('med_query_details', None)
+            flash('Message sent. You will be hearing from us through the email provided. Thank you for your interest.', 'success')
+            return redirect(url_for('home', section=''))
+        except Exception:
+            flash('We had some trouble sending the email. Please try again', 'secondary')
+            return redirect(url_for('home', section='contact'))
 
-@app.route('/about')
-def about():
-    return 'about'
+    return render_template('home.html', section=section, form=form)
 
 def send_reset_email(user):
+    """Helper function to send a reset password email. Uses Flask Mail.
+        @user: A MedicalProfession or Patient instance
+        Return: nothing
+    """
     token = user.get_reset_token()
     msg = Message('Password Reset Request', sender='noreply@patientconnect.com',
                   recipients=[user.email])
+    # url_for generates an absolute url with given parameters
     msg.body = f'''To reset your password, visit this link:
 {url_for('reset_token', user=user.role, token=token, _external=True)}
 
@@ -43,7 +79,10 @@ if you did not make this request, ignore this message.
 
 @app.route('/reset_password', methods=['GET', 'POST'])
 def reset_request():
-
+    """Handles logic for sending a reset password email.
+    Must verify the user is registered with the database then send the email
+    by the help of the send_reset_email function above
+    """
     if current_user.is_authenticated and current_user.role == 'medic':
         return redirect(url_for('homepage_medic'))
     
@@ -52,25 +91,36 @@ def reset_request():
     
     form = RequestResetForm()
     user = request.args.get('user')
-
+    if user is None:
+        return redirect(url_for('home'))
+    
     if form.validate_on_submit():
         if user == 'patient':
             patient = Patient.query.filter_by(email=form.email.data).first()
             if patient is None:
-                flash('There is no account with that email. You must register first.', 'warning')
-                return redirect(url_for('ptsignup'))
+                flash('There is no account with that email. Please confirm the email.', 'warning')
+                return render_template('reset_request.html', title='Reset Password', form=form)
             else:
-                send_reset_email(patient)
+                try:
+                    send_reset_email(patient)
+                except Exception:
+                    flash('We had some trouble sending the email. Please try again', 'secondary')
+                    return render_template('reset_request.html', title='Reset Password', form=form)
+                
                 flash('Password reset instructions sent to email provided.', 'info')
                 return redirect(url_for('login', user='patient'))
             
         if user == 'medic':
             medic = MedicalProfessional.query.filter_by(email=form.email.data).first()
             if medic is None:
-                flash('There is no account with that email. You must register first.', 'warning')
-                return redirect(url_for('medsignup'))
+                flash('There is no account with that email. Please confirm the email.', 'warning')
+                return render_template('reset_request.html', title='Reset Password', form=form)
             else:
-                send_reset_email(medic)
+                try:
+                    send_reset_email(medic)
+                except Exception:
+                    flash('We had some trouble sending the email. Please try again', 'secondary')
+                    return render_template('reset_request.html', title='Reset Password', form=form)
                 flash('Password reset instructions sent to email provided.', 'info')
                 return redirect(url_for('login', user='medic'))
             
@@ -79,13 +129,22 @@ def reset_request():
 
 @app.route('/reset_password/<token>', methods=['GET', 'POST'])
 def reset_token(token):
+    """Handles logic for resetting the password.
+    Must verify the @token is valid and user id contained therein is
+    tied to a registered user
+    """
+    #Must be logged out to change password
     if current_user.is_authenticated and current_user.role == 'medic':
        return redirect(url_for('homepage_medic'))
     
     if current_user.is_authenticated and current_user.role == 'patient':
         return redirect(url_for('homepage_patient'))
 
+    #user needed to handle authentication logic
     user = request.args.get('user')
+    if user is None:
+        return redirect(url_for('home'))
+    
     if user == 'patient':
         patient = Patient.verify_reset_token(token)
         if patient is None:
@@ -95,6 +154,7 @@ def reset_token(token):
         if form.validate_on_submit():
         # hash the password
             hashed_pwd = bcrypt.generate_password_hash(form.password.data).decode('utf-8')
+            #update the password and commit the changes
             patient.password = hashed_pwd
             db.session.commit()
             flash('Your password has been updated.You can now log in.', 'success')
@@ -116,12 +176,32 @@ def reset_token(token):
             return redirect(url_for('login', user='medic'))
         return render_template('reset_token.html', title='Reset Password', form=form)
     
-@app.route('/contact_us')
-def contact_us():
-    return 'number'
+
+def check_name(name1, name2):
+    """Helper function to check if names provided for doctors and dentist
+    during registration match those in the registered doctors database.
+    This is needed because the database only has partial registration numbers
+        @name1: name in the registered doctors database
+        @name2: name supplied in the form during registration
+    Return: True if both names match, False otherwise
+    """
+    if len(name1) == len(name2):
+        x = 1
+        names = name1.split()
+        for name in names:
+            if name in name2:
+                if x == len(names):
+                    return True
+                x += 1
+            else:
+                return False
+    return False
 
 @app.route('/medsignup', methods=['GET', 'POST'])
 def medsignup():
+    """Handles registration of medical professionals.
+    Includes checks to see if the medic's registration status is uptodate
+    """
     if current_user.is_authenticated and current_user.role == 'medic':
         return redirect(url_for('homepage_medic'))
     
@@ -131,21 +211,70 @@ def medsignup():
     form = MedicalRegistrationForm()
     if form.validate_on_submit():
         # hash the password
+        registration_status = False
         hashed_pwd = bcrypt.generate_password_hash(form.password.data).decode('utf-8')
-        username = f"{form.surname.data} {form.other_names.data}"
-        med_user = MedicalProfessional(username=username.title(), email=form.email.data,
-                                   password=hashed_pwd, profession=form.profession.data,
-                                   registration_number=form.registration_number.data,
-                                   facility_name=form.facility_name.data)
-        db.session.add(med_user)
-        db.session.commit()
-        flash(f'Your account has been created. You can now login!', 'success')
-        return(redirect(url_for('login', user='medic')))
+        username = f"{form.other_names.data} {form.surname.data}"
+
+        # switch to see if active registration status can be confirmed so that user can be registered
+        user_present = False
+        if form.profession.data == 'Pharmacist':
+            #query the RegisteredPharmacists using the registered id
+            user = RegisteredPharmacists.query.filter_by(reg_no=form.registration_number.data).first()
+            if user:
+                if user.active.strip() == 'Active':
+                    registration_status = True
+                    username = f'Dr {user.name}'
+                    user_present = True
+        if form.profession.data == 'Pharmaceutical Technologist':
+            user = RegisteredPharmtechs.query.filter_by(reg_no=form.registration_number.data).first()
+            if user:
+                if user.active.strip() == 'Active':
+                    registration_status = True
+                    username = user.name
+                    user_present = True
+
+        if form.profession.data == 'Dentist' or form.profession.data == 'Medical Officer':
+            users = RegisteredDoctors.query.filter_by(reg_no=form.registration_number.data[0:3]).all()
+            user_found = False
+            for user in users:
+                cleaned_name = user.name.lower().replace('dr ', '').replace('prof ', '').replace('  ', ' ').strip()
+                username = username.lower().replace('  ', ' ').strip()
+                if check_name(cleaned_name, username) == True:
+                    user_found = user
+                    break
+            if user_found is not False:
+                    if user_found.active.strip() == 'Active':
+                        registration_status = True
+                        username = user_found.name
+                        user_present = True
+
+        if user_present is True:
+            med_user = MedicalProfessional(username=username.title(), email=form.email.data,
+                                            password=hashed_pwd, profession=form.profession.data,
+                                            registration_number=form.registration_number.data,
+                                            facility_name=form.facility_name.data,
+                                            registration_status = registration_status)
+        
+            db.session.add(med_user)
+            db.session.commit()
+            flash(f'Your account has been created. You can now login!', 'success')
+            return(redirect(url_for('login', user='medic')))
+        else:
+            flash('Registration status could not be confirmed.\n Please confirm details or submit', 'query')
+            session['med_query_details'] = {}
+            session['med_query_details']['name'] = username
+            session['med_query_details']['email'] = form.email.data
+            session['med_query_details']['subject'] = 'Confirmation of registration details'
+            session['med_query_details']['message'] = f'''Help me with my registration:
+Profession: {form.profession.data}
+Registration number: {form.registration_number.data}
+Facility Name: {form.facility_name.data}'''
     return render_template('medsignup.html', title='Sign Up', form=form)
 
 @app.route('/ptsignup', methods=['GET', 'POST'])
 def ptsignup():
-
+    """Handles the logic registering patients
+    """
     if current_user.is_authenticated and current_user.role == 'medic':
         return redirect(url_for('homepage_medic'))
     
@@ -167,7 +296,8 @@ def ptsignup():
 
 @app.route('/login', methods=['GET','POST'])
 def login():
-
+    """Handle login of users. Utilises the Flask Login extension.
+    """
     if current_user.is_authenticated and current_user.role == 'medic':
         return redirect(url_for('homepage_medic'))
     
@@ -209,16 +339,19 @@ def login():
 @app.route('/homepage_patient')
 @login_required
 def homepage_patient():
-    phone = session.get('phone')
+    """Handle logic for the patient homepage
+    """
     user = session.get('user_type')
-    q_phone = request.args.get('phone')
+
     if user == 'patient':
         records = current_user.treatment_records
         username = current_user.username
         return render_template('homepage_patient.html', title='Patient Homepage',
                             records=records, username=username)
     
+    phone = session.get('phone')
     if user == 'medic' and phone is None:
+        # handle invalid access by a medic
         return redirect(url_for('homepage_medic'))
     elif user == 'medic' and phone is not None:
         patient = Patient.query.filter_by(phone_number=phone).first()
@@ -229,6 +362,10 @@ def homepage_patient():
 
 
 def send_otp_email(patient):
+    """Helper function to send an one time password(otp) email. Uses Flask Mail.
+        @patient: A Patient Class instance
+        Return: nothing
+    """
     msg = Message('Visit Authorization Code', sender='patientconnect24@gmail.com',
                   recipients=[patient.email])
     msg.body = f'''To authorize the visit, share this code with your doctor:
@@ -241,18 +378,23 @@ if you did not make this request, ignore this message.
 @login_required
 @doctor_required
 def homepage_medic():
+    """Handles the homepage for the medic
+    Includes logic to generate a time-based OTP by help of the pyotp module
+    """
     form = GetPhoneNumber()
-    # form.country_code.data = '254'
     # code_expired generated by an automatic redirect from the otp_confirmation page
     # used to generate an alert on the template that the code expired
     code_expired = request.args.get('code_expired')
     if code_expired == 'true':
+        # remove the otp from the patient's records
         patient = Patient.query.filter_by(phone_number=session.get('phone')).first()
         if patient:
             patient.current_otp = None
             patient.otp_expired = True
             db.session.commit()
+            session.pop('phone', None)
     print(session)
+
     end_visit = request.args.get('end_visit')
     if end_visit == 'true':
         session.pop('phone', None)
@@ -271,7 +413,15 @@ def homepage_medic():
         print(otp)
         db.session.commit()
 
-        send_otp_email(patient)
+
+        try:
+            send_otp_email(patient)
+        except Exception:
+            flash('We had some trouble sending the otp code. Please enter number again', 'secondary')
+            return render_template('homepage_medic.html',
+                            get_phone_form=form,
+                            title='Medic DashBoard',
+                            code_expired=code_expired)
         # TODO send otp
         flash('Enter the OTP code sent to the patient. It is valid for 5 minutes', 'primary')
         return redirect(url_for('otp_confirmation', phone=phone))
@@ -283,6 +433,10 @@ def homepage_medic():
 
 @app.route('/otp_confirmation', methods=['GET', 'POST'])
 def otp_confirmation():
+    """Handle the the logic for otp confirmation and invalidation
+    Includes starting up a background task to delete the patient opt within
+    five minutes if code is not used with that time
+    """
     form = VisitStartForm()
 
     # phone number needed to access the patient database's and their otp
@@ -290,8 +444,8 @@ def otp_confirmation():
     if phone is None:
         flash('Enter Phone Number', 'warning')
         return redirect (url_for('homepage_medic'))
-    print(request.form)
-    # set a timer for 180 seconds to delete the patient's otp from database
+    
+    # set a timer for 300 seconds to delete the patient's otp from database
     date = datetime.now() + timedelta(seconds=300)
 
     def remove_code():
@@ -301,6 +455,7 @@ def otp_confirmation():
             patient.current_otp = None
             patient.otp_expired = True
             db.session.commit()
+            session.pop('phone', None)
             print('code expired')
             scheduler.remove_all_jobs()
 
@@ -318,6 +473,7 @@ def otp_confirmation():
             flash('Code expired. Request a new one.', 'warning')
             patient.otp_expired = False
             db.session.commit()
+            session.pop('phone', None)
             return redirect (url_for('homepage_medic'))
         else:
             flash("Invalid Code. Confirm the code or ", 'redirect')
@@ -334,6 +490,8 @@ def otp_confirmation():
 @login_required
 @doctor_required
 def create_record(field):
+    """Handle creation of a new tretment record
+    """
     if session.get('s_record_data') is None:
         session['s_record_data'] = {}
 
@@ -394,13 +552,21 @@ def create_record(field):
         
 @app.route('/records')
 def records():
+    """Handle display of an indivual treament record
+    """
     r_id = request.args.get('id')
+
+    if r_id is None:
+        flash("Invalid record.", 'warning')
+        return redirect(url_for('homepage_patient'))
     record = TreatmentRecord.query.filter_by(id=r_id).first()
     return render_template('show_record.html', record=record)
 
 @app.route('/account', methods=['GET', 'POST'])
 @login_required
 def account():
+    """Handle account updates and view logic
+    """
     form = UpdateAccountForm()
     print(form.errors)
     if form.validate_on_submit():
@@ -428,6 +594,8 @@ def account():
 @app.route('/logout')
 @login_required
 def logout():
+    """Logs out a user and clears a session's values
+    """
     logout_user()
     expired = 'false'
     user_category = None
@@ -445,3 +613,18 @@ def logout():
     session['user_category'] = user_category
     return redirect(url_for('home'))
 
+
+@app.route('/delete_account', methods=['GET'])
+@login_required
+def delete_account():
+    """Handles deletion of all records associated with an account
+    """
+    if current_user.role == 'patient':
+        Patient.query.filter_by(id=current_user.id).delete()
+        db.session.commit()
+    if current_user.role == 'medic':
+        MedicalProfessional.query.filter_by(id=current_user.id).delete()
+        db.session.commit()
+    flash('Account has been successfully deleted', 'success')
+    session.clear()
+    return redirect(url_for('home'))

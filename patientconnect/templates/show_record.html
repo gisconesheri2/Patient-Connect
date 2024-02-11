@@ -25,10 +25,10 @@
   <!-- Tab panes -->
   <div class="tab-content">
     <div class="tab-pane container fade show active" id="diagnosis" role="tabpanel" >
-      <section class="mb-3">
-        <p class="bold">Diagnosis</p>
+      <section class="mb-2">
+        <p class="fw-bold lead mt-2 mb-2">Diagnosis</p>
         {{ record.diagnosis }}
-        <p class="bold">Case Notes</p>
+        <p class="fw-bold lead mt-3 mb-2">Case Notes</p>
         {% for sent in record.case_notes.split('\n') %}
           <p>{{ sent }}</p>
         {% endfor %}
@@ -37,22 +37,28 @@
     </div>
     <div class="tab-pane container fade" id="investigations" role="tabpanel" >
       <section class="mb-3">
-        <p class="bold">Investigations</p>
-        {{ record.investigations_done }}
+        <p class="fw-bold lead mt-2 mb-2">Investigations</p>
+        {% for sent in record.investigations_done.split('\n') %}
+          <p>{{ sent }}</p>
+        {% endfor %}
       </section>
       <button class="btn btn-primary" id='md-next'>Next</button>
     </div>
     <div class="tab-pane container fade" id="medication" role="tabpanel" >
       <section class="mb-3">
-        <p class="bold">Medication</p>
-        {{ record.medication_given }}
+        <p class="fw-bold lead mt-2 mb-2">Medication</p>
+        {% for sent in record.medication_given.split('\n') %}
+          <p>{{ sent }}</p>
+        {% endfor %}
       </section>
       <button class="btn btn-primary" id='in-next'>Next</button>
     </div>
     <div class="tab-pane container fade" id="interventions" role="tabpanel" >
       <section class="mb-3">
-        <p class="bold">Interventions</p>
-        {{ record.interventions_done }}
+        <p class="fw-bold lead mt-2 mb-2">Interventions</p>
+        {% for sent in record.interventions_done.split('\n') %}
+          <p>{{ sent }}</p>
+        {% endfor %}
       </section>
       <button style="width: 150px;" class="btn btn-outline-primary"><a class="text-decoration-none" style="color: inherit;" href="{{ url_for('homepage_patient')}}">Back to Records List</a></button>
     </div>

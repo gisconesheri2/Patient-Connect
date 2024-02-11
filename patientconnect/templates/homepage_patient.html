@@ -29,6 +29,9 @@
     {% else %}
         <div class="container">
             <p>No records available</p>
+            {% if current_user.role == 'patient' %}
+                <p>Please ask your doctor in your next visit to update your records</p>
+            {% endif %}
         </div>
     {% endif %}
     {% if current_user.role == 'medic' %}

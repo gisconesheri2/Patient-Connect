@@ -85,9 +85,10 @@
                 {% endif %}
             </fieldset>
             <div class="form-group mt-1">
-                {{ form.submit(class="btn btn-primary") }}
+                {{ form.submit(class="btn btn-primary", style="background-color: #40e0d0;" ) }}
             </div>
         </form>
+		<button style="width: 190px; background-color: #40e0d0;" class="mt-1 btn btn-primary"><a class="text-decoration-none" style="color: inherit;" href="{{ url_for('delete_account') }}">Delete Account</a></button>
     </div>
 {% endblock content %}
 

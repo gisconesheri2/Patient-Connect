@@ -21,18 +21,19 @@
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
         <meta name="viewport" content="width=device-width, initial-scale=1">
     </head>
-    <body>
-            <nav class="navbar navbar-expand-sm navbar-light" style="background-color: #40e0d0;">
+    <body class="bg-light bg-gradient" >
+            <nav id="top" class="navbar navbar-expand-sm navbar-light bg-info-subtle">
+              <div class="container-fluid">
               <a class="navbar-brand" href="{{ url_for('home') }}">
-                <img src="{{ url_for('static', filename='images/logo.png') }}" width="50" height="50" class="d-inline-block align-top" alt="">
+                <img src="{{ url_for('static', filename='images/logo3.png') }}" width="50" height="30" class="d-inline-block align-top" alt="">
                 <span class="navbar-text">
                   Patient Connect
                 </span>
               </a>
-              <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+              <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
               </button>
-              <div class="collapse navbar-collapse justify-content-end mb-3" id="navbarSupportedContent">
+              <div class="collapse navbar-collapse justify-content-end mb-1" id="navbarSupportedContent">
                 <div class="navbar-nav">
                 {% if current_user.is_authenticated %}
                   {% if current_user.role == 'medic' %}
@@ -44,11 +45,12 @@
                   <a class="nav-item nav-link" href="{{ url_for('logout') }}">Logout</a>
                 {% else %}
                 <a class="nav-item nav-link" href="{{ url_for('home') }}">Home</a>
-                <a class="nav-item nav-link" href="{{ url_for('about') }}">About</a>
-                <a class="nav-item nav-link" href="{{ url_for('contact_us') }}">Contact Us</a>
+                <a class="nav-item nav-link" href="{{ url_for('home', section='about' ) }}">About</a>
+                <a class="nav-item nav-link" href="{{ url_for('home', section='contact') }}">Contact Us</a>
                 {% endif %}
+                </div>
               </div>
-              </div>
+            </div>
             </nav>
         <main role="main" class="container">
             <div class="row">
@@ -60,6 +62,10 @@
                       <div class="alert alert-warning">
                         {{ message }}<a href="{{ url_for('homepage_medic', code_expired='true') }}">request new code</a>
                       </div>
+                      {% elif category == 'query' %}
+                      <div class="alert alert-warning">
+                        {{ message }}<a href="{{ url_for('home', section='contact', ms_redir='true') }}"> a query form</a>
+                      </div>
                     {% else %}
                       <div class="alert alert-{{ category }}">
                         {{ message }}
@@ -70,8 +76,10 @@
               {% endwith %}
                 
               </div>
+              <div>
               {% block content %}{% endblock %}
               {% block scripts %}
+            </div>
               <script src="https://cdn.jsdelivr.net/npm/intl-tel-input@19.2.16/build/js/intlTelInput.min.js"></script>
               {% endblock %}
     </body>

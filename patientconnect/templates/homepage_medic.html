@@ -6,36 +6,48 @@
     </div>
 {% endif %}
 <div class=" container bold">
-        <h2 class="h1 text-success">Welcome {{ current_user.username.split()[0] }}</h2>
+        <h2 class="h1 text-success">Welcome {{ current_user.username }}</h2>
       </div>
-<div class="container pt-3">
-    <form method="POST", action="">
-            {{ get_phone_form.hidden_tag() }}
 
-            <fieldset class="form-group">
-                    <legend> To start a visit enter the patient's number below</legend>
-                    <div class="form-group">
-                            {{ get_phone_form.phone.label(class="form-label text-success") }}
-                            
-                                {% if get_phone_form.phone.errors %}
-                                    {{ get_phone_form.phone(class="form-control is_invalid")}}
-                                    <div class="peter-custom-error">
-                                        {% for error in get_phone_form.phone.errors %}
-                                            <span>{{ error }}</span>
-                                        {% endfor %}
-                                    </div>
-                                {% else %}
-                                    {{ get_phone_form.phone(class="form-control") }}
-                                {% endif %}
-                            
-                    </div>
-                    
-            </fieldset>
-            <div class="form-group">
-                    {{ get_phone_form.submit(class="mt-3 btn btn-success") }}
-            </div>
-    </form>
-</div>
+{% if current_user.registration_status == false %}
+    <section>
+        <p>Registration status has not been confirmed.</p>
+        <p>Kindly check back in later</p>
+    </section>
+{% else %}
+    <div class="container pt-3">
+        <form method="POST", action="">
+                {{ get_phone_form.hidden_tag() }}
+
+                <fieldset class="form-group">
+                        <legend> To start a visit enter the patient's number below</legend>
+                        <div class="form-group">
+                                {{ get_phone_form.phone.label(class="form-label text-success") }}
+                                
+                                    {% if get_phone_form.phone.errors %}
+                                        {{ get_phone_form.phone(class="form-control is_invalid")}}
+                                        <div class="peter-custom-error">
+                                            {% for error in get_phone_form.phone.errors %}
+                                                <span>{{ error }}</span>
+                                            {% endfor %}
+                                        </div>
+                                    {% else %}
+                                        {{ get_phone_form.phone(class="form-control") }}
+                                    {% endif %}
+                                
+                        </div>
+                        
+                </fieldset>
+                <div id="content" class="form-group" onclick="loading();">
+                        {{ get_phone_form.submit(class="mt-3 btn btn-success") }}
+                </div>
+                <button id="loading" class="mt-3 btn btn-success" type="button" disabled>
+                    <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                    Sending Code
+                  </button>
+        </form>
+    </div>
+{% endif %}
 
 {% endblock content %}
 
@@ -65,5 +77,16 @@
     fancy_phone_field.addEventListener('blur', function() {
         wtf_phone_field.value = fancy_phone_iti.getNumber();
     });
+</script>
+<script>
+    function loading(){
+        $("#loading").addClass('visible');
+        $("#content").hide();
+        window.setTimeout( 
+            () => {
+            $("#loading").hide();
+            $("#content").show();
+        }, 5000);
+    }
 </script>
 {% endblock %}
