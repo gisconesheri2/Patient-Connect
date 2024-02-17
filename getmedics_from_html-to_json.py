@@ -1,17 +1,20 @@
 from bs4 import BeautifulSoup
 import json
-import requests
+import os
 
 """ Gets registration details for medics from html files and saves then to
 JSON files for easy manipulation into an sql database
 """
+
+current_dir = os.getcwd()
+
 def get_pharmacists():
     """From the pharmacist's register html (obtained form copying and
     pasting the html from https://practice.pharmacyboardkenya.org/LicenseStatus?register=pharmacists)
     parse the included tables and extract the names, registration number and registration status
     """
 
-    with open(r'patientconnect\registered_medics\pharmacists_register.html', 'r') as f:
+    with open(os.path.join(current_dir, 'patientconnect', 'registered_medics', 'pharmacists_register.html'), 'r') as f:
       html_doc_f = f.read()
 
     soup = BeautifulSoup(html_doc_f, 'html.parser')
@@ -29,7 +32,8 @@ def get_pharmacists():
             if td.find('span') is not None:
                 name['status'] = tag.find('span').string.split(':')[1]
         all.append(name)
-    with open(r'patientconnect\registered_medics\pharmacists.json', 'w') as f:
+
+    with open(os.path.join(current_dir, 'patientconnect', 'registered_medics', 'pharmacists.json'), 'r') as f:
         json.dump(all, f)
 
 def get_pharmtechs():
@@ -38,8 +42,9 @@ def get_pharmtechs():
     parse the included tables and extract the names, registration number and registration status
     """
 
-    with open(r'patientconnect\registered_medics\pharmtechs_register.html', 'r') as f:
+    with open(os.path.join(current_dir, 'patientconnect', 'registered_medics', 'pharmtechs_register.html'), 'r') as f:
         html_doc_f = f.read()
+
     soup = BeautifulSoup(html_doc_f, 'html.parser')
     headers = ['name', 'reg']
 
@@ -55,7 +60,8 @@ def get_pharmtechs():
             if td.find('span') is not None:
                 name['status'] = tag.find('span').string.split(':')[1]
         all.append(name)
-    with open(r'patientconnect\registered_medics\pharmtechs.json', 'w') as f:
+    
+    with open(os.path.join(current_dir, 'patientconnect', 'registered_medics', 'pharmtechs.json'), 'r') as f:
         json.dump(all, f)
 
 def get_doctors():
@@ -64,8 +70,9 @@ def get_doctors():
     parse the included tables and extract the names, registration number and registration status
     """
       
-    with open(r'patientconnect\registered_medics\medics_register.html', 'r') as f:
+    with open(os.path.join(current_dir, 'patientconnect', 'registered_medics', 'medics_register.html'), 'r') as f:
       html_doc_f = f.read()
+
     soup = BeautifulSoup(html_doc_f, 'html.parser')
     headers = ['name', 'reg']
     all = []
@@ -81,7 +88,7 @@ def get_doctors():
         all.append(name)
         # name['status'] = tag.find('span').string.split(':')[1]
 
-    with open(r'patientconnect\registered_medics\doctors.json', 'w') as f:
+    with open(os.path.join(current_dir, 'patientconnect', 'registered_medics', 'doctors.json'), 'r') as f:
       json.dump(all, f)
 
 get_doctors()

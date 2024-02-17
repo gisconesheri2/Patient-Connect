@@ -1,12 +1,15 @@
 import json
+import os
 from patientconnect.models import *
 from patientconnect import db, app
 """adds registration details to a database from json files"""
 
+current_dir = os.getcwd()
+
 def add_doctors_to_db():
     """populates the Registered Doctors table with data
     """
-    with open(r'patientconnect\registered_medics\doctors.json', 'r') as f:
+    with open(os.path.join(current_dir, 'patientconnect', 'registered_medics', 'doctors.json'), 'r') as f:
         with app.app_context():
             doctors = json.load(f)
             try:
@@ -36,7 +39,7 @@ def add_doctors_to_db():
 def add_pharmacists_to_db():
     """populates the Registered Pharmacists table with data
     """
-    with open(r'patientconnect\registered_medics\pharmacists.json', 'r') as f:
+    with open(os.path.join(current_dir, 'patientconnect', 'registered_medics', 'pharmacists.json'), 'r') as f:
         with app.app_context():
             pharmacists = json.load(f)
             try:
@@ -61,7 +64,7 @@ def add_pharmacists_to_db():
 def add_pharmtechs_to_db():
     """populates the Registered Pharmtechs table with data
     """
-    with open(r'patientconnect\registered_medics\pharmtechs.json', 'r') as f:
+    with open(os.path.join(current_dir, 'patientconnect','registered_medics', 'pharmtechs.json'), 'r') as f:
         with app.app_context():
             pharmtechs = json.load(f)
             try:
