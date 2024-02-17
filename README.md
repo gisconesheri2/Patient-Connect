@@ -1,4 +1,6 @@
 ## PATIENT CONNECT
+![Patient Connect Homepage](https://github.com/gisconesheri2/Patient-Connect/assets/135016760/8eb929bb-3cb4-4a30-8095-10d1e8749ecd)
+
 A way to share patient's medical history across healthcare providers and medical facilities
 
 Patient Connect is a web application built using Flask web framework that provides a platform where medical records can be easily shared and accessed by both patients and the medical fraternity.
