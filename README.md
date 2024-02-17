@@ -16,8 +16,14 @@ Run:
 user@group$ cd Patient-Connect
 user@group ~/Patient-Connect$ pip install -r requirements.txt
 ```
+Before using the app, you have to create an .env file in the patientconnect folder with these environment variables defined:
+- SECRET_KEY (you can generate one using the python's [secrets](https://www.geeksforgeeks.org/secrets-python-module-generate-secure-random-numbers/) module)
+- MAIL_USER (a valid gmail address used to send emails)
+- MAIL_PASS (an app password generated within the gmail account settings. See [here](https://www.zdnet.com/article/gmail-app-passwords-what-they-are-how-to-create-one-and-why-to-use-them/)
 
-Then to initialize the database start a python interactive environment from the main folder of the project and run:
+Alternatively, these can be set as system variables as per your operating system
+
+The next step is to initialize the database. Start a python interactive environment from the main folder of the project and run:
 
 ```
 user@group ~/Patient-Connect$ python3
